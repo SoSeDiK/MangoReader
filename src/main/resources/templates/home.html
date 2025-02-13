@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Mango Reader</title>
+    <link rel="stylesheet" th:href="@{/css/css-reset.css}" />
+    <link rel="stylesheet" th:href="@{/css/styles.css}" />
+    <script src="http://localhost:35729/livereload.js"></script>
+  </head>
+  <body class="library">
+    <h1>Library</h1>
+    <div class="titles cards-grid">
+      <th:block th:each="title : ${titles}">
+        <a th:href="@{/library/{id}(id=${title.id})}" class="no-link-decor">
+          <div
+            th:replace="~{fragments/title-card :: titleCard(${title})}"
+          ></div>
+        </a>
+      </th:block>
+    </div>
+  </body>
+</html>

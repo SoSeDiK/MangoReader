@@ -1,0 +1,12 @@
+<div th:fragment="chapterCard(title, chapter)" class="card">
+  <div class="cover">
+    <img
+      th:src="@{/thumbnail/{titleId}/{chapterNum}(titleId=${title.id}, chapterNum=${chapter.chapterNum})}"
+      alt="Cover art"
+      draggable="false"
+    />
+  </div>
+  <div class="body">
+    <h5 class="title" th:text="${chapter.name}">Chapter Name</h5>
+  </div>
+</div>

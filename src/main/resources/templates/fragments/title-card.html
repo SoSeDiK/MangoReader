@@ -1,0 +1,18 @@
+<div th:fragment="titleCard(title)" class="card">
+  <div class="cover">
+    <img
+      th:src="@{/thumbnail/{titleId}(titleId=${title.id})}"
+      alt="Cover art"
+      draggable="false"
+    />
+  </div>
+  <div class="body">
+    <h5 class="title" th:text="${title.name}">Title Name</h5>
+    <p class="entries">
+      <span th:text="${title.chaptersCount}">0</span>
+      <span th:text="${title.chaptersCount == 1 ? 'chapter' : 'chapters'}"
+        >entries</span
+      >
+    </p>
+  </div>
+</div>
