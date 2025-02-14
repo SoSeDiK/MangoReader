@@ -20,5 +20,25 @@
         />
       </div>
     </div>
+    <div class="navigation">
+      <a
+        th:if="${chapter.chapterNum > 1}"
+        th:href="@{/library/{titleId}/{chapterNum}(titleId=${title.id}, chapterNum=${chapter.chapterNum - 1})}"
+        class="nav-link"
+        >Previous Chapter</a
+      >
+      <a
+        th:if="${chapter.chapterNum < title.chaptersCount}"
+        th:href="@{/library/{titleId}/{chapterNum}(titleId=${title.id}, chapterNum=${chapter.chapterNum + 1})}"
+        class="nav-link"
+        >Next Chapter</a
+      >
+      <a
+        th:if="${chapter.chapterNum == title.chaptersCount}"
+        th:href="@{/}"
+        class="nav-link"
+        >Finish Reading</a
+      >
+    </div>
   </body>
 </html>

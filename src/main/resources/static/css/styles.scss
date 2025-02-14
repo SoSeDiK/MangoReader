@@ -96,3 +96,28 @@ header.fixed {
     width: 100%;
   }
 }
+
+.navigation {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  padding: 10px 0;
+}
+
+.nav-link {
+  width: 300px;
+  text-align: center;
+  text-decoration: none;
+  padding: 12px 20px;
+  background-color: #ffffff;
+  color: #333;
+  border: 2px solid #666;
+  border-radius: 3px;
+  font-weight: bold;
+  font-size: 1.1em;
+
+  &:hover {
+    color: #000;
+  }
+}
