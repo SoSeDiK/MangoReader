@@ -1,26 +1,28 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
   <head>
-    <meta charset="UTF-8" />
+    <th:block th:insert="~{head}"></th:block>
     <title th:text="${title.name}">Title Name</title>
-    <link rel="stylesheet" th:href="@{/css/css-reset.css}" />
-    <link rel="stylesheet" th:href="@{/css/styles.css}" />
-    <script src="http://localhost:35729/livereload.js"></script>
   </head>
   <body class="library">
-    <h3 th:text="${title.name}">Title Name</h3>
-    <p>Entries: <span th:text="${title.chaptersCount}">0</span></p>
-    <div class="chapters cards-grid">
-      <th:block th:each="chapter : ${chapters}">
-        <a
-          th:href="@{/library/{titleId}/{chapterNum}(titleId=${title.id}, chapterNum=${chapter.chapterNum})}"
-          class="no-link-decor"
-        >
-          <div
-            th:replace="~{fragments/chapter-card :: chapterCard(${title}, ${chapter})}"
-          ></div>
-        </a>
-      </th:block>
+    <header class="fixed">
+      <th:block th:insert="~{header}"></th:block>
+    </header>
+    <div class="content">
+      <h3 th:text="${title.name}">Title Name</h3>
+      <p>Entries: <span th:text="${title.chaptersCount}">0</span></p>
+      <div class="chapters cards-grid">
+        <th:block th:each="chapter : ${chapters}">
+          <a
+            th:href="@{/library/{titleId}/{chapterNum}(titleId=${title.id}, chapterNum=${chapter.chapterNum})}"
+            class="no-link-decor"
+          >
+            <div
+              th:replace="~{fragments/chapter-card :: chapterCard(${title}, ${chapter})}"
+            ></div>
+          </a>
+        </th:block>
+      </div>
     </div>
   </body>
 </html>

@@ -109,7 +109,7 @@ public class FileService {
 
 				int chapterImageCount;
 				try {
-					List<ImageEntity> imageEntities = processChapterImages(chapterFile); // TODO this eats quite some RAM storage, better way?
+					List<ImageEntity> imageEntities = processChapterImages(chapterFile); // TODO this eats quite some memory, better way?
 					imageEntities.sort(Comparator.comparing(ImageEntity::getName));
 
 					String prefix = titleEntity.getId() + "/" + chapterEntity.getChapterNum() + "/";
@@ -127,6 +127,8 @@ public class FileService {
 					this.chapterRepository.delete(chapterEntity);
 					continue;
 				}
+				chapterEntity.setImageCount(chapterImageCount);
+				this.chapterRepository.save(chapterEntity); // Refresh image count
 
 				log.info("Cached chapter {} with {} images", chapterFile.toPath(), chapterImageCount);
 			}
@@ -142,7 +144,10 @@ public class FileService {
 	private @Nullable Chapter processChapter(File chapterFile, int chapterCount) {
 		if (!isChapterFile(chapterFile)) return null;
 
-		return new Chapter(null, chapterFile.getName(), chapterFile.getAbsolutePath(), chapterCount + 1);
+		String fileName = chapterFile.getName();
+		int lastIndexOfDot = fileName.lastIndexOf('.');
+		if (lastIndexOfDot != -1) fileName = fileName.substring(0, lastIndexOfDot);
+		return new Chapter(null, fileName, chapterFile.getAbsolutePath(), chapterCount + 1, 0);
 	}
 
 	private boolean isChapterFile(File file) {
@@ -150,7 +155,7 @@ public class FileService {
 
 		String fileType = FileUtil.getFileExtension(file);
 		return switch (fileType) {
-			case "cbz", "pdf" -> true;
+			case "cbz", "zip" -> true;
 			default -> false;
 		};
 	}
@@ -182,7 +187,10 @@ public class FileService {
 //		byte[] webpData = imageType == ImageType.WEBP ? null : WebpUtil.convertToWebP(imageData, 0.8F); // TODO generating webps (separate job?), causes segfault randomly
 		byte[] webpData = null;
 
-		return new Image(null, entry.getName(), entry.getName(), imageType.getExtension(), -1, imageData, webpData);
+		String fileName = entry.getName();
+		int lastIndexOfDot = fileName.lastIndexOf('.');
+		if (lastIndexOfDot != -1) fileName = fileName.substring(0, lastIndexOfDot);
+		return new Image(null, fileName, entry.getName(), imageType.getExtension(), -1, imageData, webpData);
 	}
 
 	private byte[] readImageData(InputStream inputStream) throws IOException {

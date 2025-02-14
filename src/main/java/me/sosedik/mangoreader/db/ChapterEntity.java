@@ -33,7 +33,8 @@ public class ChapterEntity {
 
 	private String name;
 	private String storagePath;
-	private Integer chapterNum;
+	private int chapterNum;
+	private int imageCount;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "title_id")

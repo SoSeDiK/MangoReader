@@ -1,36 +1,24 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
   <head>
-    <meta charset="UTF-8" />
+    <th:block th:insert="~{head}"></th:block>
     <title th:text="${chapter.name} + ' - ' + ${title.name}">
       Chapter Name - Title Name
     </title>
-    <link rel="stylesheet" th:href="@{/css/css-reset.css}" />
-    <link rel="stylesheet" th:href="@{/css/styles.css}" />
-    <script src="http://localhost:35729/livereload.js"></script>
   </head>
   <body class="reader">
-    <div id="img-container"></div>
-
-    <script th:inline="javascript">
-      const titleId = [[${title.id}]];
-      const chapterNum = [[${chapter.chapterNum}]];
-
-      fetch(`/library/${titleId}/${chapterNum}/list`)
-          .then(response => response.json())
-          .then(imageDatas => {
-              const container = document.getElementById('img-container');
-              imageDatas.forEach(imageData => {
-                  const [mapping, name] = imageData.split("\n");
-                  const img = document.createElement('img');
-                  img.loading = "lazy";
-                  img.draggable = false;
-                  img.src = `/library/${mapping}`;
-                  img.alt = name;
-                  container.appendChild(img);
-              });
-          })
-          .catch(error => console.error('Error loading comic:', error));
-    </script>
+    <header>
+      <th:block th:insert="~{header}"></th:block>
+    </header>
+    <div id="img-container">
+      <div th:each="imageData : ${imageDatas}">
+        <img
+          th:src="@{/library/{mapping}(mapping=${imageData.mapping})}"
+          th:alt="${imageData.name}"
+          loading="lazy"
+          draggable="false"
+        />
+      </div>
+    </div>
   </body>
 </html>

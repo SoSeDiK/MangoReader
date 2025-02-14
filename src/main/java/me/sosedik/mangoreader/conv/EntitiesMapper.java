@@ -10,7 +10,12 @@ import me.sosedik.mangoreader.domain.Title;
 public class EntitiesMapper {
 
 	public static Title toViewModel(TitleEntity entity) {
-		return new Title(entity.getId(), entity.getName(), entity.getStoragePath(), entity.getChapterCount());
+		return new Title(
+			entity.getId(),
+			entity.getName(),
+			entity.getStoragePath(),
+			entity.getChapterCount()
+		);
 	}
 
 	public static TitleEntity toEntity(Title view) {
@@ -23,7 +28,13 @@ public class EntitiesMapper {
 	}
 
 	public static Chapter toViewModel(ChapterEntity entity) {
-		return new Chapter(entity.getId(), entity.getName(), entity.getStoragePath(), entity.getChapterNum());
+		return new Chapter(
+			entity.getId(),
+			entity.getName(),
+			entity.getStoragePath(),
+			entity.getChapterNum(),
+			entity.getImageCount()
+		);
 	}
 
 	public static ChapterEntity toEntity(Chapter view) {
@@ -32,6 +43,7 @@ public class EntitiesMapper {
 				.name(view.name())
 				.storagePath(view.storagePath())
 				.chapterNum(view.chapterNum())
+				.imageCount(view.imageCount())
 				.build();
 	}
 

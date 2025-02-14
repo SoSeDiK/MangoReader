@@ -15,7 +15,8 @@ public record Chapter(
 	@Nullable Long id,
 	String name,
 	String storagePath,
-	int chapterNum
+	int chapterNum,
+	int imageCount
 ) {
 
 	public ChapterEntity toEntity() {

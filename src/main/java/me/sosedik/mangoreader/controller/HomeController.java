@@ -7,6 +7,7 @@ import me.sosedik.mangoreader.db.ImageRepository;
 import me.sosedik.mangoreader.db.TitleEntity;
 import me.sosedik.mangoreader.db.TitleRepository;
 import me.sosedik.mangoreader.domain.Chapter;
+import me.sosedik.mangoreader.domain.Image;
 import me.sosedik.mangoreader.domain.Title;
 import me.sosedik.mangoreader.misc.ImageType;
 import me.sosedik.mangoreader.misc.ResourceNotFoundException;
@@ -19,6 +20,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.servlet.view.RedirectView;
 
 import java.util.List;
 
@@ -39,6 +41,11 @@ public class HomeController {
 			.toList();
 		model.addAttribute("titles", titles);
 		return "home";
+	}
+
+	@GetMapping("/library")
+	public RedirectView redirect() {
+		return new RedirectView("/");
 	}
 
 	@GetMapping("/library/{titleId}")
@@ -70,14 +77,20 @@ public class HomeController {
 			.orElseThrow(() -> new ResourceNotFoundException("Chapter with num " + chapterNum + " for title with ID " + titleId + " could not found"));
 		TitleEntity titleEntity = chapterEntity.getTitleEntity();
 
+		String prefix = titleId + "/" + chapterNum + "/";
+		List<Image> images = this.imageRepository.findByMappingStartingWithOrderByImageNumAsc(prefix).stream()
+			.map(ImageEntity::toViewModel)
+			.toList();
+
 		model.addAttribute("title", titleEntity.toViewModel());
 		model.addAttribute("chapter", chapterEntity.toViewModel());
+		model.addAttribute("imageDatas", images);
 
 		return "reader";
 	}
 
 	@GetMapping("/thumbnail/{titleId}")
-public ResponseEntity<ByteArrayResource> titleThumbnail(
+	public ResponseEntity<ByteArrayResource> titleThumbnail(
 		@RequestHeader(HttpHeaders.ACCEPT) String acceptHeader,
 		@PathVariable("titleId") long titleId
 	) { // TODO Generating real thumbnails?
@@ -93,19 +106,6 @@ public ResponseEntity<ByteArrayResource> titleThumbnail(
 		return getImage(acceptHeader, titleId, chapterNum, 1);
 	}
 
-	@GetMapping("/library/{titleId}/{chapterNum}/list")
-	public ResponseEntity<List<String>> listComicPages(
-		@PathVariable("titleId") long titleId,
-		@PathVariable("chapterNum") int chapterNum
-	) {
-		String prefix = titleId + "/" + chapterNum + "/";
-		List<ImageEntity> imageEntities = this.imageRepository.findByMappingStartingWithOrderByImageNumAsc(prefix);
-		List<String> imageData = imageEntities.stream()
-			.map(imageEntity -> imageEntity.getMapping() + "\n" + imageEntity.getName())
-			.toList();
-		return ResponseEntity.ok(imageData);
-	}
-
 	@GetMapping("/library/{titleId}/{chapterNum}/{imageNum}")
 	public ResponseEntity<ByteArrayResource> getImage(
 		@RequestHeader(HttpHeaders.ACCEPT) String acceptHeader,
@@ -113,9 +113,9 @@ public ResponseEntity<ByteArrayResource> titleThumbnail(
 		@PathVariable("chapterNum") int chapterNum,
 		@PathVariable("imageNum") int imageNum
 	) {
-		String name = titleId + "/" + chapterNum + "/" + imageNum;
-		ImageEntity imageEntity = this.imageRepository.findByMapping(name)
-			.orElseThrow(() -> new ResourceNotFoundException("Couldn't find image " + name));
+		String mapping = titleId + "/" + chapterNum + "/" + imageNum;
+		ImageEntity imageEntity = this.imageRepository.findByMapping(mapping)
+			.orElseThrow(() -> new ResourceNotFoundException("Couldn't find image " + mapping));
 
 		ImageType imageType = ImageType.imageType(imageEntity.getExtension());
 		if (imageType == null) imageType = ImageType.JPEG; // Huh?

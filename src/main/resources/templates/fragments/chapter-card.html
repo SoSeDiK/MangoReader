@@ -8,5 +8,11 @@
   </div>
   <div class="body">
     <h5 class="title" th:text="${chapter.name}">Chapter Name</h5>
+    <p class="entries">
+      <span th:text="${chapter.imageCount}">0</span>
+      <span th:text="${chapter.imageCount == 1 ? 'image' : 'images'}"
+        >images</span
+      >
+    </p>
   </div>
 </div>
