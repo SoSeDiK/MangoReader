@@ -79,10 +79,14 @@ header.fixed {
 #img-container {
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 #img-container img {
   width: 100%;
+}
+@media (min-width: 1460px) {
+  #img-container {
+    align-items: center;
+  }
 }
 
 .navigation {
