@@ -46,6 +46,11 @@ dependencies {
 	testAnnotationProcessor("org.projectlombok:lombok:1.18.36")
 }
 
+tasks.jar {
+	// Do not generate plain JAR
+	enabled = false
+}
+
 tasks.withType<Test> {
 	useJUnitPlatform()
 }

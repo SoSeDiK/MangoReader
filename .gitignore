@@ -1,12 +1,12 @@
 # Gradle
-.gradle
+.gradle/
 build/
 
 # IntelliJ
-.idea
+.idea/
 
 # VS Code
-.vscode
+.vscode/
 
 # Compiled class file
 *.class
@@ -26,6 +26,8 @@ build/
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+
+!gradle/wrapper/gradle-wrapper.jar
 
 # Project data
 data/
