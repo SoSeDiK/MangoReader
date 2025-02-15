@@ -30,8 +30,11 @@ dependencies {
 	// HTML templates
 	implementation("org.springframework.boot:spring-boot-starter-thymeleaf")
 
-	// webp support
+	// WebP support
 	implementation("com.github.usefulness:webp-imageio:0.9.0")
+
+	// RAR archives support
+	implementation("com.github.junrar:junrar:7.5.5")
 
 	compileOnly("org.projectlombok:lombok:1.18.36")
 	annotationProcessor("org.projectlombok:lombok:1.18.36")

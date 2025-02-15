@@ -1,5 +1,8 @@
 package me.sosedik.mangoreader.service;
 
+import com.github.junrar.Archive;
+import com.github.junrar.exception.RarException;
+import com.github.junrar.rarfile.FileHeader;
 import jakarta.annotation.Nullable;
 import jakarta.annotation.PostConstruct;
 import me.sosedik.mangoreader.db.ChapterEntity;
@@ -219,18 +222,41 @@ public class FileService {
 			return chapterEntities;
 		}
 
-		try (var zipIn = new ZipInputStream(new FileInputStream(chapterFile))) {
-			ZipEntry entry;
-			while ((entry = zipIn.getNextEntry()) != null) {
-				Image image = processImageEntry(zipIn, entry);
-				if (image != null) {
-					ImageEntity imageEntity = image.toEntity();
-					chapterEntities.add(imageEntity);
-				}
+		var archiveType = ArchiveType.archiveType(chapterFile);
+		if (archiveType == null)
+			throw new UnsupportedOperationException("Unsupported chapter file: " + chapterFile.toPath());
 
-				zipIn.closeEntry();
+		switch (archiveType) {
+			case ZIP -> {
+				try (var zipIn = new ZipInputStream(new FileInputStream(chapterFile))) {
+					ZipEntry entry;
+					while ((entry = zipIn.getNextEntry()) != null) {
+						Image image = processZipImageEntry(zipIn, entry);
+						if (image != null) {
+							ImageEntity imageEntity = image.toEntity();
+							chapterEntities.add(imageEntity);
+						}
+
+						zipIn.closeEntry();
+					}
+				}
+			}
+			case RAR -> {
+				try (var archive = new Archive(chapterFile)) {
+					FileHeader fileHeader;
+					while ((fileHeader = archive.nextFileHeader()) != null) {
+						Image image = processRarImageEntry(archive, fileHeader);
+						if (image != null) {
+							ImageEntity imageEntity = image.toEntity();
+							chapterEntities.add(imageEntity);
+						}
+					}
+				} catch (RarException e) {
+					throw new IOException("Couldn't read RAR archive", e);
+				}
 			}
 		}
+
 		return chapterEntities;
 	}
 
@@ -244,7 +270,7 @@ public class FileService {
 		return new Image(null, fileName, imageFile.getName(), imageType.getExtension(), imageFile.getAbsolutePath(), -1, null, null);
 	}
 
-	private @Nullable Image processImageEntry(ZipInputStream zipIn, ZipEntry entry) throws IOException {
+	private @Nullable Image processZipImageEntry(ZipInputStream zipIn, ZipEntry entry) throws IOException {
 		if (entry.isDirectory()) return null;
 
 		ImageType imageType = ImageType.imageType(FileUtil.getFileExtension(entry.getName()));
@@ -257,6 +283,22 @@ public class FileService {
 		int lastIndexOfDot = fileName.lastIndexOf('.');
 		if (lastIndexOfDot != -1) fileName = fileName.substring(0, lastIndexOfDot);
 		return new Image(null, fileName, entry.getName(), imageType.getExtension(), null, -1, imageData, null);
+	}
+
+	private @Nullable Image processRarImageEntry(Archive archive, FileHeader fileHeader) throws IOException {
+		if (fileHeader.isDirectory()) return null;
+
+		ImageType imageType = ImageType.imageType(FileUtil.getFileExtension(fileHeader.getFileName()));
+		if (imageType == null) return null;
+
+		try (InputStream is = archive.getInputStream(fileHeader)) {
+			byte[] imageData = readImageData(is);
+
+			String fileName = fileHeader.getFileName();
+			int lastIndexOfDot = fileName.lastIndexOf('.');
+			if (lastIndexOfDot != -1) fileName = fileName.substring(0, lastIndexOfDot);
+			return new Image(null, fileName, fileHeader.getFileName(), imageType.getExtension(), null, -1, imageData, null);
+		}
 	}
 
 	private byte[] readImageData(InputStream inputStream) throws IOException {
