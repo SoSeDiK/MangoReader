@@ -28,6 +28,12 @@
         >Previous Chapter</a
       >
       <a
+        th:if="${chapter.chapterNum == 1}"
+        th:href="@{/library/{titleId}(titleId=${title.id})}"
+        class="nav-link"
+        >Back to all chapters</a
+      >
+      <a
         th:if="${chapter.chapterNum < title.chaptersCount}"
         th:href="@{/library/{titleId}/{chapterNum}(titleId=${title.id}, chapterNum=${chapter.chapterNum + 1})}"
         class="nav-link"

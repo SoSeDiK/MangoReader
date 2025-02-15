@@ -32,10 +32,11 @@ public class ImageEntity {
 	private String name;
 	private String mapping;
 	private String extension;
+	private @Nullable String storagePath;
 	private Integer imageNum;
 
 	@Lob
-	private byte[] rawData;
+	private @Nullable byte[] rawData;
 	@Lob
 	private @Nullable byte[] webpData;
 

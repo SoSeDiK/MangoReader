@@ -53,6 +53,7 @@ public class EntitiesMapper {
 			entity.getName(),
 			entity.getMapping(),
 			entity.getExtension(),
+			entity.getStoragePath(),
 			entity.getImageNum(),
 			entity.getRawData(),
 			entity.getWebpData()
@@ -65,6 +66,7 @@ public class EntitiesMapper {
 				.name(view.name())
 				.mapping(view.mapping())
 				.extension(view.extension())
+				.storagePath(view.storagePath())
 				.imageNum(view.imageNum())
 				.rawData(view.rawData())
 				.webpData(view.webpData())

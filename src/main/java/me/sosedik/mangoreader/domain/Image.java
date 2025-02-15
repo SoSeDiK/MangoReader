@@ -9,8 +9,9 @@ public record Image(
 	String name,
 	String mapping,
 	String extension,
+	@Nullable String storagePath,
 	int imageNum,
-	byte[] rawData,
+	@Nullable byte[] rawData,
 	@Nullable byte[] webpData
 ) {
 

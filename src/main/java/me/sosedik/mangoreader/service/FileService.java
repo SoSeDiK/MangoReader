@@ -11,6 +11,7 @@ import me.sosedik.mangoreader.db.TitleRepository;
 import me.sosedik.mangoreader.domain.Chapter;
 import me.sosedik.mangoreader.domain.Image;
 import me.sosedik.mangoreader.domain.Title;
+import me.sosedik.mangoreader.misc.ArchiveType;
 import me.sosedik.mangoreader.misc.ImageType;
 import me.sosedik.mangoreader.util.FileUtil;
 import org.slf4j.Logger;
@@ -23,11 +24,14 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -62,12 +66,43 @@ public class FileService {
 			walk.forEach(path -> {
 				File file = path.toFile();
 				if (!file.isDirectory()) return;
+				if (isChapterDir(path)) return;
 
 				processTitle(file);
 			});
 		} catch (IOException e) {
 			log.warn("Couldn't process path at {}", startPath, e);
 		}
+	}
+
+	/**
+	 * Checks whether the provided path is a chapter directory,
+	 * i.e., contains an image inside
+	 *
+	 * @param dir directory path
+	 * @return whether the dir should be treated as chapter
+	 */
+	private boolean isChapterDir(Path dir) {
+		try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
+			for (Path entry : stream) {
+				File file = entry.toFile();
+				if (!file.isFile()) continue;
+
+				if (file.isDirectory())
+					return false;
+
+				String extension = FileUtil.getFileExtension(file);
+				if (ArchiveType.archiveType(extension) != null)
+					return false;
+
+				if (ImageType.imageType(extension) != null)
+					return true;
+			}
+		} catch (IOException e) {
+			log.error("Error reading directory", e);
+		}
+
+		return false;
 	}
 
 	private void processTitle(File titleDir) {
@@ -79,10 +114,12 @@ public class FileService {
 			title = titleEntity.toViewModel();
 
 		int chapterCount = 0;
-		try (Stream<Path> walk = Files.walk(titleDir.toPath(), 1).sorted()) {
+		try (
+			Stream<Path> walk = Files.walk(titleDir.toPath(), 1)
+				.sorted(Comparator.comparingInt(FileService::extractNumber).thenComparing(Path::getFileName))
+		) {
 			for (Path path : walk.toList()) {
 				File chapterFile = path.toFile();
-				if (!chapterFile.isFile()) continue;
 
 				Chapter chapter = processChapter(chapterFile, chapterCount);
 				if (chapter == null) continue;
@@ -141,28 +178,48 @@ public class FileService {
 		}
 	}
 
+	private static int extractNumber(Path path) {
+		String filename = path.getFileName().toString();
+		Pattern pattern = Pattern.compile("\\d+");
+		Matcher matcher = pattern.matcher(filename);
+		return matcher.find() ? Integer.parseInt(matcher.group()) : Integer.MAX_VALUE;
+	}
+
 	private @Nullable Chapter processChapter(File chapterFile, int chapterCount) {
-		if (!isChapterFile(chapterFile)) return null;
+		if (chapterFile.isDirectory()) {
+			if (!isChapterDir(chapterFile.toPath()))
+				return null;
+		} else {
+			if (ArchiveType.archiveType(chapterFile) == null)
+				return null;
+		}
 
 		String fileName = chapterFile.getName();
-		int lastIndexOfDot = fileName.lastIndexOf('.');
-		if (lastIndexOfDot != -1) fileName = fileName.substring(0, lastIndexOfDot);
+		if (chapterFile.isFile()) {
+			int lastIndexOfDot = fileName.lastIndexOf('.');
+			if (lastIndexOfDot != -1) fileName = fileName.substring(0, lastIndexOfDot);
+		}
 		return new Chapter(null, fileName, chapterFile.getAbsolutePath(), chapterCount + 1, 0);
 	}
 
-	private boolean isChapterFile(File file) {
-		if (!file.isFile()) return false;
-
-		String fileType = FileUtil.getFileExtension(file);
-		return switch (fileType) {
-			case "cbz", "zip" -> true;
-			default -> false;
-		};
-	}
-
-	private List<ImageEntity> processChapterImages(File file) throws IOException {
+	private List<ImageEntity> processChapterImages(File chapterFile) throws IOException {
 		List<ImageEntity> chapterEntities = new ArrayList<>();
-		try (var zipIn = new ZipInputStream(new FileInputStream(file))) {
+
+		if (chapterFile.isDirectory()) {
+			try (Stream<Path> walk = Files.walk(chapterFile.toPath(), 1)) {
+				walk.forEach(path -> {
+					File imageFile = path.toFile();
+					Image image = readImage(imageFile);
+					if (image != null) {
+						ImageEntity imageEntity = image.toEntity();
+						chapterEntities.add(imageEntity);
+					}
+				});
+			}
+			return chapterEntities;
+		}
+
+		try (var zipIn = new ZipInputStream(new FileInputStream(chapterFile))) {
 			ZipEntry entry;
 			while ((entry = zipIn.getNextEntry()) != null) {
 				Image image = processImageEntry(zipIn, entry);
@@ -177,6 +234,16 @@ public class FileService {
 		return chapterEntities;
 	}
 
+	private @Nullable Image readImage(File imageFile) {
+		ImageType imageType = ImageType.imageType(imageFile);
+		if (imageType == null) return null;
+
+		String fileName = imageFile.getName();
+		int lastIndexOfDot = fileName.lastIndexOf('.');
+		if (lastIndexOfDot != -1) fileName = fileName.substring(0, lastIndexOfDot);
+		return new Image(null, fileName, imageFile.getName(), imageType.getExtension(), imageFile.getAbsolutePath(), -1, null, null);
+	}
+
 	private @Nullable Image processImageEntry(ZipInputStream zipIn, ZipEntry entry) throws IOException {
 		if (entry.isDirectory()) return null;
 
@@ -185,12 +252,11 @@ public class FileService {
 
 		byte[] imageData = readImageData(zipIn);
 //		byte[] webpData = imageType == ImageType.WEBP ? null : WebpUtil.convertToWebP(imageData, 0.8F); // TODO generating webps (separate job?), causes segfault randomly
-		byte[] webpData = null;
 
 		String fileName = entry.getName();
 		int lastIndexOfDot = fileName.lastIndexOf('.');
 		if (lastIndexOfDot != -1) fileName = fileName.substring(0, lastIndexOfDot);
-		return new Image(null, fileName, entry.getName(), imageType.getExtension(), -1, imageData, webpData);
+		return new Image(null, fileName, entry.getName(), imageType.getExtension(), null, -1, imageData, null);
 	}
 
 	private byte[] readImageData(InputStream inputStream) throws IOException {

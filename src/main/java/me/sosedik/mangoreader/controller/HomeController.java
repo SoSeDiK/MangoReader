@@ -22,6 +22,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.servlet.view.RedirectView;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 @Controller
@@ -121,15 +124,34 @@ public class HomeController {
 		if (imageType == null) imageType = ImageType.JPEG; // Huh?
 		byte[] imageData;
 
-		if (shouldServeWebp(acceptHeader, imageType) && imageEntity.getWebpData() != null) {
-			imageType = ImageType.WEBP;
-			imageData = imageEntity.getWebpData();
-		} else if (imageType == ImageType.JXL && !acceptHeader.contains(ImageType.JXL.getMediaTypeValue())) {
-			// TODO serve as PNG?
-			imageData = imageEntity.getRawData();
+		if (imageEntity.getRawData() == null) {
+			String storagePath = imageEntity.getStoragePath();
+			if (storagePath == null)
+				throw new ResourceNotFoundException("Couldn't find image " + mapping);
+
+			Path path = Path.of(storagePath);
+			if (!path.toFile().exists())
+				throw new ResourceNotFoundException("Couldn't find image " + mapping);
+
+			try {
+				imageData = Files.readAllBytes(path);
+			} catch (IOException e) {
+				throw new ResourceNotFoundException("Couldn't find image " + mapping);
+			}
 		} else {
-			imageData = imageEntity.getRawData();
+			if (shouldServeWebp(acceptHeader, imageType) && imageEntity.getWebpData() != null) {
+				imageType = ImageType.WEBP;
+				imageData = imageEntity.getWebpData();
+			} else if (imageType == ImageType.JXL && !acceptHeader.contains(ImageType.JXL.getMediaTypeValue())) {
+				// TODO serve as PNG?
+				imageData = imageEntity.getRawData();
+			} else {
+				imageData = imageEntity.getRawData();
+			}
 		}
+
+		if (imageData == null)
+			throw new ResourceNotFoundException("Couldn't find image " + mapping);
 
 		return ResponseEntity.ok()
 				.contentType(imageType.getMediaType())
