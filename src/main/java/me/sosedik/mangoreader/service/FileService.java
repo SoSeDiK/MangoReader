@@ -16,6 +16,7 @@ import me.sosedik.mangoreader.domain.Image;
 import me.sosedik.mangoreader.domain.Title;
 import me.sosedik.mangoreader.misc.ArchiveType;
 import me.sosedik.mangoreader.misc.ImageType;
+import me.sosedik.mangoreader.util.FileNameSorterUtil;
 import me.sosedik.mangoreader.util.FileUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,8 +34,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -119,7 +118,7 @@ public class FileService {
 		int chapterCount = 0;
 		try (
 			Stream<Path> walk = Files.walk(titleDir.toPath(), 1)
-				.sorted(Comparator.comparingInt(FileService::extractNumber).thenComparing(Path::getFileName))
+				.sorted(Comparator.comparing(path -> path.getFileName().toString(), FileNameSorterUtil.COMPARATOR))
 		) {
 			for (Path path : walk.toList()) {
 				File chapterFile = path.toFile();
@@ -150,7 +149,7 @@ public class FileService {
 				int chapterImageCount;
 				try {
 					List<ImageEntity> imageEntities = processChapterImages(chapterFile); // TODO this eats quite some memory, better way?
-					imageEntities.sort(Comparator.comparing(ImageEntity::getName));
+					imageEntities.sort(Comparator.comparing(ImageEntity::getName, FileNameSorterUtil.COMPARATOR));
 
 					String prefix = titleEntity.getId() + "/" + chapterEntity.getChapterNum() + "/";
 					for (int i = 0; i < imageEntities.size(); i++) {
@@ -179,13 +178,6 @@ public class FileService {
 		} catch (IOException e) {
 			log.warn("Couldn't process title at {}", titleDir.toPath(), e);
 		}
-	}
-
-	private static int extractNumber(Path path) {
-		String filename = path.getFileName().toString();
-		Pattern pattern = Pattern.compile("\\d+");
-		Matcher matcher = pattern.matcher(filename);
-		return matcher.find() ? Integer.parseInt(matcher.group()) : Integer.MAX_VALUE;
 	}
 
 	private @Nullable Chapter processChapter(File chapterFile, int chapterCount) {
