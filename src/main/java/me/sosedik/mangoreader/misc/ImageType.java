@@ -2,10 +2,8 @@ package me.sosedik.mangoreader.misc;
 
 import jakarta.annotation.Nullable;
 import lombok.Getter;
-import me.sosedik.mangoreader.util.FileUtil;
 import org.springframework.http.MediaType;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -51,10 +49,6 @@ public enum ImageType {
 
 	public String getMediaTypeValue() {
 		return this.mediaType.toString();
-	}
-
-	public static @Nullable ImageType imageType(File file) {
-		return imageType(FileUtil.getFileExtension(file));
 	}
 
 	public static @Nullable ImageType imageType(String extension) {

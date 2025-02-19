@@ -11,6 +11,7 @@ import me.sosedik.mangoreader.domain.Image;
 import me.sosedik.mangoreader.domain.Title;
 import me.sosedik.mangoreader.misc.ImageType;
 import me.sosedik.mangoreader.misc.ResourceNotFoundException;
+import me.sosedik.mangoreader.util.FileNameSorterUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
@@ -25,6 +26,7 @@ import org.springframework.web.servlet.view.RedirectView;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
 import java.util.List;
 
 @Controller
@@ -62,6 +64,7 @@ public class HomeController {
 		List<Chapter> chapters = titleEntity.getChapters()
 			.stream()
 			.map(ChapterEntity::toViewModel)
+			.sorted(Comparator.comparing(Chapter::name, FileNameSorterUtil.COMPARATOR))
 			.toList();
 
 		model.addAttribute("title", titleEntity.toViewModel());

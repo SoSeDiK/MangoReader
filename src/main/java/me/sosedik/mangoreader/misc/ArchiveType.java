@@ -4,7 +4,7 @@ import jakarta.annotation.Nullable;
 import lombok.Getter;
 import me.sosedik.mangoreader.util.FileUtil;
 
-import java.io.File;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
@@ -35,8 +35,8 @@ public enum ArchiveType {
 		this.extensions = extensions;
 	}
 
-	public static @Nullable ArchiveType archiveType(File file) {
-		return archiveType(FileUtil.getFileExtension(file));
+	public static @Nullable ArchiveType archiveType(Path path) {
+		return archiveType(FileUtil.getFileExtension(path));
 	}
 
 	public static @Nullable ArchiveType archiveType(String extension) {
